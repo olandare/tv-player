@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Player</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+    iframe { border: 0; width: 100%; height: 100%; display: block; }
+    p { color: #aaa; font: 24px sans-serif; text-align: center; margin-top: 40vh; }
+  </style>
+</head>
+<body>
+  <!--
+    Página intermediária do launcher "Início" para TV Samsung.
+    O YouTube só toca vídeos embutidos dentro de um site com endereço; o app da TV não tem um.
+    Esta página tem endereço (GitHub Pages) e só embute o vídeo pedido em ?v=ID.
+    Uso: index.html?v=ID_DO_VIDEO&mute=1
+  -->
+  <script>
+    (function () {
+      var params = {};
+      location.search.replace(/^\?/, '').split('&').forEach(function (kv) {
+        var p = kv.split('=');
+        if (p[0]) params[decodeURIComponent(p[0])] = decodeURIComponent(p[1] || '');
+      });
+      var id = params.v || '';
+      if (!/^[A-Za-z0-9_-]{11}$/.test(id)) {
+        document.body.innerHTML = '<p>Vídeo não informado</p>';
+        return;
+      }
+      var f = document.createElement('iframe');
+      f.allow = 'autoplay; encrypted-media; fullscreen';
+      f.src = 'https://www.youtube.com/embed/' + id +
+        '?autoplay=1&controls=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1' +
+        (params.mute === '1' ? '&mute=1' : '') +
+        '&origin=' + encodeURIComponent(location.origin);
+      document.body.appendChild(f);
+
+      // O launcher manda comandos (ligar/desligar som); repassa para o player do YouTube
+      window.addEventListener('message', function (e) {
+        if (e.source === f.contentWindow) return;
+        if (typeof e.data === 'string' && e.data.indexOf('"command"') !== -1) f.contentWindow.postMessage(e.data, '*');
+      });
+    })();
+  </script>
+</body>
+</html>
